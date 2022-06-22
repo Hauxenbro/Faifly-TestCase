@@ -26,6 +26,15 @@ class CustomWorkerFilter(filters.BaseFilterBackend):
         else:
             return queryset.all()
 
+class CustomBookingFilter(filters.BaseFilterBackend):
+    def filter_queryset(self, request, queryset, view):
+        period_date = request.query_params.get('date', None)
+        if period_date:
+            # period_date = datetime.strptime(period_date, '%Y-%M-%d').date()
+            return queryset.filter(starting_date=period_date)
+        else:
+            return queryset.all()
+
 class WorkerViewSet(ModelViewSet):
     '''
     Configuration of worker view set
@@ -46,11 +55,10 @@ class BookingViewSet(ModelViewSet):
     '''
     Configuration of booking view set
 
-    filters : /?starting_date=...
+    filters : /?date=<y-m-d>
     '''
     permission_classes = (IsAdminOrPostOnly,) # Permission for posting if user is not a stuff
-    filter_backends = (DjangoFilterBackend,)
-    filterset_fileds = ('starting_date',)
+    filter_backends = (DjangoFilterBackend, CustomBookingFilter)
 
     def get_queryset(self):
         if self.request.user.is_staff:
@@ -69,13 +77,12 @@ class BookingViewSet(ModelViewSet):
     def create(self, request, *args, **kwargs):
         booked_proc = Booking.objects.filter(master_id=request.data['master'], starting_date=request.data['starting_date'])
         # Taking booked processes with collected starting date and current master
-        worker = Workers.objects.get(pk=request.data['master']) # Taking appropriate worker
+        worker = Workers.objects.get(id=request.data['master']) # Taking appropriate worker
         req_st_d = datetime.strptime(request.data['starting_date'], '%Y-%m-%d').date()  # Taking starting date from collected data
         req_fin_d = datetime.strptime(request.data['finish_date'], '%Y-%m-%d').date() # Taking finish date from collected data
         req_start = datetime.strptime(request.data['starting_time'], '%H:%M').time() # Taking starting time from collected data
         req_finish = datetime.strptime(request.data['finish_time'], '%H:%M').time() # Taking finish time from collected data
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
         invalid = False # Check valid flag
         for proc in booked_proc: # Taking every process from booked processes
             if req_fin_d == proc.finish_date: # One day finishing
@@ -87,6 +94,7 @@ class BookingViewSet(ModelViewSet):
                     invalid = True
                     break
         if invalid:
+            serializer.is_valid()
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST) # Calling error
         else:
             for sched in worker.schedule.all(): # Taking all schedules of appropriate master
@@ -94,14 +102,17 @@ class BookingViewSet(ModelViewSet):
                 #One day start and finish, Scheduled finish time > Starting time of proc > Scheduled start time
                 if req_st_d == sched.date_work_finish and req_start > sched.time_start and req_start < sched.time_finish:
                     if req_finish < sched.time_finish:
-                        self.perform_create(serializer)
+                        serializer.is_valid()
+                        serializer.save()
                         return Response(serializer.data, status = status.HTTP_201_CREATED)
                 # Different days of starting and finishing, starting time of process > scheduled starting time of work
                 elif req_st_d != sched.date_work_finish and req_start > sched.time_start:
                     # If current finish day differs from scheduled finish date or finish date < scheduled finish of next day if one day
                     if req_fin_d < sched.date_work_finish or req_finish < sched.time_finish:
-                        self.perform_create(serializer)
+                        serializer.is_valid()
+                        serializer.save()
                         return Response(serializer.data, status=status.HTTP_201_CREATED)
+            serializer.is_valid()
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
