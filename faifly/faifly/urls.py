@@ -19,5 +19,5 @@ from django.urls import path, include
 urlpatterns = [
     path('faifly/admin_schedule/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls')),
-    # path('faifly/', include('workersbooking.urls')),
+    path('faifly/', include('workersbooking.urls')),
 ]
