@@ -86,11 +86,11 @@ class BookingViewSet(ModelViewSet):
         invalid = False # Check valid flag
         for proc in booked_proc: # Taking every process from booked processes
             if req_fin_d == proc.finish_date: # One day finishing
-                if req_start > proc.starting_time and req_start < proc.finish_time:
+                if req_start >= proc.starting_time and req_start < proc.finish_time:
                     invalid = True
                     break
             else: # Different day of finishing
-                if req_start > proc.starting_time:
+                if req_start >= proc.starting_time:
                     invalid = True
                     break
         if invalid:
@@ -100,15 +100,15 @@ class BookingViewSet(ModelViewSet):
             for sched in worker.schedule.all(): # Taking all schedules of appropriate master
 
                 #One day start and finish, Scheduled finish time > Starting time of proc > Scheduled start time
-                if req_st_d == sched.date_work_finish and req_start > sched.time_start and req_start < sched.time_finish:
-                    if req_finish < sched.time_finish:
+                if req_st_d == sched.date_work_finish and req_start >= sched.time_start and req_start < sched.time_finish:
+                    if req_finish <= sched.time_finish:
                         serializer.is_valid()
                         serializer.save()
                         return Response(serializer.data, status = status.HTTP_201_CREATED)
                 # Different days of starting and finishing, starting time of process > scheduled starting time of work
                 elif req_st_d != sched.date_work_finish and req_start > sched.time_start:
                     # If current finish day differs from scheduled finish date or finish date < scheduled finish of next day if one day
-                    if req_fin_d < sched.date_work_finish or req_finish < sched.time_finish:
+                    if req_fin_d < sched.date_work_finish or req_finish <= sched.time_finish:
                         serializer.is_valid()
                         serializer.save()
                         return Response(serializer.data, status=status.HTTP_201_CREATED)
