@@ -1,5 +1,7 @@
 # Faifly-TestCase
 
+pip install -r requirements.txt
+
 
 Database configuration: 
 
