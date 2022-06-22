@@ -6,8 +6,8 @@ pip install -r requirements.txt
 Database configuration: 
 
 DB Name = 'Faifly'
-User = 'root'
-password = '12345'
+
+Load Faifly.sql database.
 
 URLs:
 
