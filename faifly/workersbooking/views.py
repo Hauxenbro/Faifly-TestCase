@@ -61,9 +61,9 @@ class BookingViewSet(ModelViewSet):
     filter_backends = (DjangoFilterBackend, CustomBookingFilter)
 
     def get_queryset(self):
-        if self.request.user.is_staff:
+        if self.request.user.is_staff: # If user is admin can see all records
             return Booking.objects.all()
-        elif self.request.user.is_authenticated:
+        elif self.request.user.is_authenticated: # If user is authenticated can see only his records
             return Booking.objects.filter(master_id=self.request.user.id)
         else:
             return []
