@@ -66,7 +66,7 @@ class BookingViewSet(ModelViewSet):
         elif self.request.user.is_authenticated: # If user is authenticated can see only his records
             return Booking.objects.filter(master_id=self.request.user.id)
         else:
-            return Booking.objects.all()
+            return Booking.objects.filter(pk__lt=0)
 
     def get_serializer_class(self):
         if self.request.user.is_staff:
