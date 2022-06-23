@@ -13,6 +13,9 @@ URLs:
 
 Admin-panel: 127.0.0.1:8080/faifly/admin_schedule/
 
+login:admin
+pass:123
+
 API:
 
 Worker list: 127.0.0.1:8080/faifly/workers/?spec=...&date=<y-m-d>
